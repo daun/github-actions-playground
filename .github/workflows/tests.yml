@@ -67,15 +67,15 @@ jobs:
         run: npm run build
 
   test:
-    name: Run playwright tests (${{ matrix.shard-index }}/${{ strategy.job-total }})
+    name: Run playwright tests (${{ matrix.shard }}/${{ matrix.total }})
     runs-on: ubuntu-latest
     timeout-minutes: 60
     needs: install
     strategy:
       fail-fast: false
       matrix:
-        shard-index: [1, 2, 3, 4]
-        shard-total: [4]
+        shard: [1, 2, 3, 4]
+        total: [4]
     steps:
       - name: Restore node_modules folder
         uses: actions/cache/restore@v3
@@ -91,8 +91,11 @@ jobs:
           path: '~/.cache/ms-playwright'
           key: ${{ runner.os }}-playwright-${{ needs.install.outputs.playwright-version }}
 
+      - name: Log working directory
+        run: echo "${{ github.workspace }}"
+
       - name: Run tests
-        run: npx playwright test --config ./tests/config/playwright.config.ts --shard=${{ matrix.shard-index }}/${{ matrix.shard-total }} --workers=1
+        run: npx playwright test --config ./tests/config/playwright.config.ts --shard=${{ matrix.shard }}/${{ matrix.total }} --workers=1
 
       - name: Upload test report
         uses: actions/upload-artifact@v3
