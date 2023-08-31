@@ -33,6 +33,7 @@ export default defineConfig({
     ['html', { outputFolder: '../reports/html', open: 'never' }],
     ['json', { outputFile: '../reports/json/report.json' }],
     ['blob', { outputDir: '../reports/blobs' }],
+    ['junit', { outputFile: '../reports/junit/results.xml' }],
   ] : [
     ['list'],
     ['html', { outputFolder: '../reports/html', open: 'on-failure' }],
