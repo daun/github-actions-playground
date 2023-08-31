@@ -58,9 +58,6 @@ jobs:
     - name: Bundle library
       run: npm run build
 
-    - name: Install browsers
-      run: npm run test:install
-
     - name: Run tests
       run: npm run test
 
@@ -71,6 +68,7 @@ jobs:
         name: playwright-report
         path: tests/reports/
         retention-days: 14
+
     - name: Upload test resulsts
       uses: actions/upload-artifact@v3
       if: always()
