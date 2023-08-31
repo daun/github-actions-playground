@@ -19,49 +19,52 @@ jobs:
       npm-cache-dir: ${{ steps.npm-cache-dir.outputs.dir }}
       playwright-version: ${{ steps.playwright-version.outputs.version }}
     steps:
-    - name: Check out repository
-      uses: actions/checkout@v3
+      - name: Check out repository
+        uses: actions/checkout@v3
 
-    - name: Set up node
-      uses: actions/setup-node@v3
-      with:
-        node-version: 18
+      - name: Set up node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
 
-    - name: Get npm cache directory
-      id: npm-cache-dir
-      run: echo "dir=$(npm config get cache)" >> $GITHUB_OUTPUT
+      - name: Get npm cache directory
+        id: npm-cache-dir
+        run: echo "dir=$(npm config get cache)" >> $GITHUB_OUTPUT
 
-    - name: Cache npm dependencies
-      uses: actions/cache@v3
-      id: npm-cache
-      with:
-        path: ${{ steps.npm-cache-dir.outputs.dir }}
-        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-        restore-keys: |
-          ${{ runner.os }}-node-
+      - name: Cache npm dependencies
+        uses: actions/cache@v3
+        id: npm-cache
+        with:
+          path: ${{ steps.npm-cache-dir.outputs.dir }}
+          key: ${{ runner.os }}-npm-cache-${{ hashFiles('**/package-lock.json') }}
 
-    - name: Get playwright version
-      id: playwright-version
-      run: echo "version=$(node -e "console.log(require('./package-lock.json').packages['node_modules/@playwright/test'].version)")" >> $GITHUB_OUTPUT
+      - name: Install dependencies
+        run: npm ci
 
-    - name: Cache playwright binaries
-      uses: actions/cache@v3
-      id: playwright-cache
-      with:
-        path: |
-          ~/.cache/ms-playwright
-        key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}
+      - name: Save node_modules folder
+        uses: actions/cache/save@v3
+        id: node-modules-cache
+        with:
+          path: './node_modules'
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('**/package-lock.json') }}
 
-    - name: Install dependencies
-      run: npm ci
-      # if: steps.npm-cache.outputs.cache-hit != 'true'
+      - name: Get playwright version
+        id: playwright-version
+        run: echo "version=$(node -e "console.log(require('./package-lock.json').packages['node_modules/@playwright/test'].version)")" >> $GITHUB_OUTPUT
 
-    - name: Install playwright binaries
-      run: npx playwright install --with-deps
-      if: steps.playwright-cache.outputs.cache-hit != 'true'
+      - name: Cache playwright binaries
+        uses: actions/cache@v3
+        id: playwright-cache
+        with:
+          path: '~/.cache/ms-playwright'
+          key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}
 
-    - name: Bundle library
-      run: npm run build
+      - name: Install playwright binaries
+        run: npx playwright install --with-deps
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+
+      - name: Bundle library
+        run: npm run build
 
   test:
     name: Run playwright tests (${{ matrix.shard-index }}/${{ strategy.job-total }})
@@ -74,21 +77,18 @@ jobs:
         shard-index: [1, 2, 3, 4]
         shard-total: [4]
     steps:
-      - name: Restore npm dependencies
-        uses: actions/cache@v3
-        id: npm-cache
+      - name: Restore node_modules folder
+        uses: actions/cache/restore@v3
+        id: node-modules-restore
         with:
-          path: ${{ needs.install.outputs.npm-cache-dir }}
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
+          path: './node_modules'
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('**/package-lock.json') }}
 
       - name: Restore playwright binaries
-        uses: actions/cache@v3
-        id: playwright-cache
+        uses: actions/cache/restore@v3
+        id: playwright-restore
         with:
-          path: |
-            ~/.cache/ms-playwright
+          path: '~/.cache/ms-playwright'
           key: ${{ runner.os }}-playwright-${{ needs.install.outputs.playwright-version }}
 
       - name: Run tests
