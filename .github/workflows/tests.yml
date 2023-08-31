@@ -19,7 +19,6 @@ jobs:
       npm-cache-dir: ${{ steps.npm-cache-dir.outputs.dir }}
       playwright-version: ${{ steps.playwright-version.outputs.version }}
     steps:
-
     - name: Check out repository
       uses: actions/checkout@v3
 
@@ -69,45 +68,44 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     needs: install
-
     strategy:
       fail-fast: false
       matrix:
         shard-index: [1, 2, 3, 4]
         shard-total: [4]
+    steps:
+      - name: Restore npm dependencies
+        uses: actions/cache@v3
+        id: npm-cache
+        with:
+          path: ${{ needs.install.outputs.npm-cache-dir }}
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
 
-    - name: Restore npm dependencies
-      uses: actions/cache@v3
-      id: npm-cache
-      with:
-        path: ${{ needs.install.outputs.npm-cache-dir }}
-        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-        restore-keys: |
-          ${{ runner.os }}-node-
+      - name: Restore playwright binaries
+        uses: actions/cache@v3
+        id: playwright-cache
+        with:
+          path: |
+            ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ needs.install.outputs.playwright-version }}
 
-    - name: Restore playwright binaries
-      uses: actions/cache@v3
-      id: playwright-cache
-      with:
-        path: |
-          ~/.cache/ms-playwright
-        key: ${{ runner.os }}-playwright-${{ needs.install.outputs.playwright-version }}
+      - name: Run tests
+        run: npx playwright test --shard=${{ matrix.shard-index }}/${{ matrix.shard-total }} --workers=1
 
-    - name: Run tests
-      run: npx playwright test --shard=${{ matrix.shard-index }}/${{ matrix.shard-total }} --workers=1
+      - name: Upload test report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: playwright-report
+          path: tests/reports/
+          retention-days: 14
 
-    - name: Upload test report
-      uses: actions/upload-artifact@v3
-      if: always()
-      with:
-        name: playwright-report
-        path: tests/reports/
-        retention-days: 14
-
-    - name: Upload test resulsts
-      uses: actions/upload-artifact@v3
-      if: always()
-      with:
-        name: playwright-results
-        path: tests/results/
-        retention-days: 14
+      - name: Upload test resulsts
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: playwright-results
+          path: tests/results/
+          retention-days: 14
