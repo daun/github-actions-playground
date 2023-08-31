@@ -20,7 +20,7 @@ jobs:
     - name: Bundle library
       run: npm run build
     - name: Install browsers
-      run: npm run test:e2e:install
+      run: npm run test:install
     - name: Run tests
       run: npm run test
     - uses: actions/upload-artifact@v3
