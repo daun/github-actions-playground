@@ -92,7 +92,7 @@ jobs:
           key: ${{ runner.os }}-playwright-${{ needs.install.outputs.playwright-version }}
 
       - name: Run tests
-        run: npx playwright test --shard=${{ matrix.shard-index }}/${{ matrix.shard-total }} --workers=1
+        run: npx playwright test --config ./tests/config/playwright.config.ts --shard=${{ matrix.shard-index }}/${{ matrix.shard-total }} --workers=1
 
       - name: Upload test report
         uses: actions/upload-artifact@v3
