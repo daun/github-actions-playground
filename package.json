@@ -1,0 +1,33 @@
+{
+  "name": "github-actions-playground",
+  "amdName": "GitHubActionsPlayground",
+  "version": "1.0.0",
+  "type": "module",
+  "source": "./src/index.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.module.js",
+  "unpkg": "./dist/index.umd.js",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/index.modern.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "src",
+    "dist"
+  ],
+  "scripts": {
+    "test": "npx playwright test",
+    "build": "microbundle src/index.ts -f modern,esm,cjs,umd"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@playwright/test": "^1.37.1",
+    "microbundle": "^0.15.1",
+    "vitest": "^0.34.3"
+  }
+}
