@@ -99,9 +99,6 @@ jobs:
           path: '~/.cache/ms-playwright'
           key: ${{ runner.os }}-playwright-${{ needs.install.outputs.playwright-version }}
 
-      - name: Log working directory
-        run: echo "${{ github.workspace }}"
-
       - name: Run tests
         run: npx playwright test --config ./tests/config/playwright.config.ts --shard=${{ matrix.shard }}/${{ matrix.total }} --workers=1
 
