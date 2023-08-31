@@ -7,9 +7,17 @@ on:
   workflow_dispatch:
 
 jobs:
-  test:
-    timeout-minutes: 60
+  install:
+    name: Install dependencies
     runs-on: ubuntu-latest
+    timeout-minutes: 60
+    # permissions:
+    #   contents: read
+    #   pages: write
+    #   id-token: write
+    outputs:
+      npm-cache-dir: ${{ steps.npm-cache-dir.outputs.dir }}
+      playwright-version: ${{ steps.playwright-version.outputs.version }}
     steps:
 
     - name: Check out repository
@@ -22,8 +30,7 @@ jobs:
 
     - name: Get npm cache directory
       id: npm-cache-dir
-      shell: bash
-      run: echo "dir=$(npm config get cache)" >> ${GITHUB_OUTPUT}
+      run: echo "dir=$(npm config get cache)" >> $GITHUB_OUTPUT
 
     - name: Cache npm dependencies
       uses: actions/cache@v3
@@ -34,10 +41,9 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-node-
 
-    - name: Get Playwright version
+    - name: Get playwright version
       id: playwright-version
-      shell: bash
-      run: echo "version=$(node -e "console.log(require('./package-lock.json').packages['node_modules/@playwright/test'].version)")" >> ${GITHUB_OUTPUT}
+      run: echo "version=$(node -e "console.log(require('./package-lock.json').packages['node_modules/@playwright/test'].version)")" >> $GITHUB_OUTPUT
 
     - name: Cache playwright binaries
       uses: actions/cache@v3
@@ -51,15 +57,44 @@ jobs:
       run: npm ci
       # if: steps.npm-cache.outputs.cache-hit != 'true'
 
-    - name: Install Playwright binaries
+    - name: Install playwright binaries
       run: npx playwright install --with-deps
       if: steps.playwright-cache.outputs.cache-hit != 'true'
 
     - name: Bundle library
       run: npm run build
 
+  test:
+    name: Run playwright tests (${{ matrix.shard-index }}/${{ strategy.job-total }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    needs: install
+
+    strategy:
+      fail-fast: false
+      matrix:
+        shard-index: [1, 2, 3, 4]
+        shard-total: [4]
+
+    - name: Restore npm dependencies
+      uses: actions/cache@v3
+      id: npm-cache
+      with:
+        path: ${{ needs.install.outputs.npm-cache-dir }}
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
+
+    - name: Restore playwright binaries
+      uses: actions/cache@v3
+      id: playwright-cache
+      with:
+        path: |
+          ~/.cache/ms-playwright
+        key: ${{ runner.os }}-playwright-${{ needs.install.outputs.playwright-version }}
+
     - name: Run tests
-      run: npm run test
+      run: npx playwright test --shard=${{ matrix.shard-index }}/${{ matrix.shard-total }} --workers=1
 
     - name: Upload test report
       uses: actions/upload-artifact@v3
