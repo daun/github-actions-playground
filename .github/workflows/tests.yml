@@ -44,21 +44,6 @@ jobs:
           path: './node_modules'
           key: ${{ runner.os }}-node-modules-${{ hashFiles('**/package-lock.json') }}
 
-      - name: Get playwright version
-        id: playwright-version
-        run: echo "version=$(cat ./package-lock.json | jq -re '.packages["node_modules/@playwright/test"].version')" >> $GITHUB_OUTPUT
-
-      - name: Cache playwright binaries
-        uses: actions/cache@v3
-        id: playwright-cache
-        with:
-          path: '~/.cache/ms-playwright'
-          key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}
-
-      - name: Install playwright binaries
-        run: npx playwright install --with-deps
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-
       - name: Bundle library
         run: npm run build
 
@@ -73,6 +58,8 @@ jobs:
   test:
     name: Run playwright tests (${{ matrix.shard }})
     runs-on: ubuntu-latest
+    container:
+      image: mcr.microsoft.com/playwright:v1.37.1
     timeout-minutes: 20
     needs: install
     strategy:
@@ -95,16 +82,6 @@ jobs:
         with:
           path: './node_modules'
           key: ${{ runner.os }}-node-modules-${{ hashFiles('**/package-lock.json') }}
-
-      - name: Restore playwright binaries
-        uses: actions/cache/restore@v3
-        id: playwright-restore
-        with:
-          path: '~/.cache/ms-playwright'
-          key: ${{ runner.os }}-playwright-${{ needs.install.outputs.playwright-version }}
-
-      - name: Install OS dependencies # required for Webkit
-        run: npx playwright install-deps
 
       - name: Download dist folder
         uses: actions/download-artifact@v3
