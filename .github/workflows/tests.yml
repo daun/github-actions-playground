@@ -10,7 +10,7 @@ jobs:
   install:
     name: Install dependencies
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 5
     outputs:
       npm-cache-dir: ${{ steps.npm-cache-dir.outputs.dir }}
       playwright-version: ${{ steps.playwright-version.outputs.version }}
@@ -46,7 +46,7 @@ jobs:
 
       - name: Get playwright version
         id: playwright-version
-        run: echo "version=$(node -e "console.log(require('./package-lock.json').packages['node_modules/@playwright/test'].version)")" >> $GITHUB_OUTPUT
+        run: echo "version=$(cat ./package-lock.json | jq -re '.packages["node_modules/@playwright/test"].version')" >> $GITHUB_OUTPUT
 
       - name: Cache playwright binaries
         uses: actions/cache@v3
@@ -62,15 +62,24 @@ jobs:
       - name: Bundle library
         run: npm run build
 
+      - name: Upload dist folder
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: dist-folder
+          path: dist
+          retention-days: 1
+
   test:
     name: Run playwright tests (${{ matrix.shard }})
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 20
     needs: install
     strategy:
       fail-fast: false
       matrix:
         shard: [1/4, 2/4, 3/4, 4/4]
+        # project: [chromium, firefox, webkit]
     steps:
       - name: Check out repository
         uses: actions/checkout@v3
@@ -94,22 +103,32 @@ jobs:
           path: '~/.cache/ms-playwright'
           key: ${{ runner.os }}-playwright-${{ needs.install.outputs.playwright-version }}
 
+      - name: Install OS dependencies # required for Webkit
+        run: npx playwright install-deps
+
+      - name: Download dist folder
+        uses: actions/download-artifact@v3
+        with:
+          name: dist-folder
+          path: dist
+
       - name: Run tests
-        run: npx playwright test --config ./tests/config/playwright.config.ts --shard ${{ matrix.shard }} --workers 1
+        run: npx playwright test --config ./tests/config/playwright.config.ts --shard ${{ matrix.shard }} # --workers 1
 
       - name: Upload blob report
         uses: actions/upload-artifact@v3
         if: always()
         with:
-          name: playwright-blob-reports
+          name: blob-reports
           path: tests/reports/blobs
           retention-days: 1
 
-  merge-reports:
+  report:
     name: Create report
     if: always()
-    needs: [test]
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [test]
     steps:
       - name: Check out repository
         uses: actions/checkout@v3
@@ -129,15 +148,39 @@ jobs:
       - name: Download blob reports
         uses: actions/download-artifact@v3
         with:
-          name: playwright-blob-reports
+          name: blob-reports
           path: playwright-blob-reports
 
-      - name: Merge into HTML Report
-        run: npx playwright merge-reports --reporter html ./playwright-blob-reports
+      - name: Merge blob reports
+        run: npx playwright merge-reports --reporter html,./tests/reporters/markdown-reporter.js ./playwright-blob-reports
 
       - name: Upload HTML report
         uses: actions/upload-artifact@v3
         with:
-          name: html-report--attempt-${{ github.run_attempt }}
+          name: html-report # --attempt-${{ github.run_attempt }}
           path: playwright-report
           retention-days: 14
+
+      - name: Read markdown report
+        uses: andstor/file-reader-action@v1
+        id: markdown-report
+        with:
+          path: playwright-report/report.md
+
+      - name: Find report comment
+        uses: peter-evans/find-comment@v2
+        id: find-comment
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: playwright-report-github-action
+
+      - name: Create or update report comment
+        uses: peter-evans/create-or-update-comment@v3
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          comment-id: ${{ steps.find-comment.outputs.comment-id }}
+          edit-mode: replace
+          body: |
+            <!-- playwright-report-github-action -->
+            ${{ steps.markdown-report.outputs.contents }}
