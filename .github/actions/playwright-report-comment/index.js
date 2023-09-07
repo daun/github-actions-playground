@@ -3,7 +3,7 @@ import path from 'path'
 import { getInput, setOutput, setFailed, startGroup, endGroup, debug } from '@actions/core'
 import { context, getOctokit } from '@actions/github'
 
-const iconSize = 14
+const iconSize = 12
 const icons = {
 	octicons: {
 		failed: 'stop',
@@ -163,6 +163,7 @@ export function parseReport(data) {
 		})
 		return all
 	}, [])
+	const tests = specs.flatMap(spec => spec.tests)
 	const failed = specs.filter(spec => spec.failed)
 	const passed = specs.filter(spec => spec.passed)
 	const flaky = specs.filter(spec => spec.flaky)
@@ -186,9 +187,7 @@ export function parseReport(data) {
 
 function parseSpec(spec, parents = []) {
 	const { ok, line, column } = spec
-	const test = spec.tests[0]
-	const status = test.status
-	const project = test.projectName
+	const tests = spec.tests.map(test => parseTests(test, [...parents, spec]))
 
 	const path = [project, ...parents.map(p => p.title), spec.title].filter(Boolean)
 	const title = path.join(' → ')
@@ -200,6 +199,18 @@ function parseSpec(spec, parents = []) {
 	return { passed, failed, flaky, skipped, title, path, line, column }
 }
 
+function parseTests(test, parents = []) {
+	const { status, expectedStatus, projectName: project } = test
+	const path = [project, ...parents.map(p => p.title), spec.title].filter(Boolean)
+	const title = path.join(' → ')
+	const ok = status === expectedStatus
+	const flaky = status === 'flaky'
+	const skipped = status === 'skipped'
+	const failed = !ok || status === 'unexpected'
+	const passed = ok && !skipped && !failed
+	return { passed, failed, flaky, skipped, title, path }
+}
+
 export function renderReportSummary(report, { commit, message, title, reportUrl, iconStyle } = {}) {
 	const { duration, failed, passed, flaky, skipped } = report
 	const paragraphs = []
@@ -208,7 +219,7 @@ export function renderReportSummary(report, { commit, message, title, reportUrl,
 
 	paragraphs.push(`### ${title}`)
 
-	// Passed/failed tests
+	// Passed/failed testsd
 
 	const tests = [
 		failed.length ? `${renderIcon('failed', { iconStyle })}  **${failed.length} failed**` : ``,
