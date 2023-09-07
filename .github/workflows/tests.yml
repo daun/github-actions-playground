@@ -162,7 +162,7 @@ jobs:
           retention-days: 14
 
       - name: Create report comment
-        uses: ../actions/playwright-report-comment
+        uses: ./.github/actions/playwright-report-comment
 
       # - name: Read markdown report
       #   uses: andstor/file-reader-action@v1
