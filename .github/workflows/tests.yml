@@ -10,8 +10,6 @@ jobs:
   install:
     name: Install dependencies
     runs-on: ubuntu-latest
-    container:
-      image: mcr.microsoft.com/playwright:v1.37.1
     timeout-minutes: 5
     outputs:
       npm-cache-dir: ${{ steps.npm-cache-dir.outputs.dir }}
@@ -38,6 +36,13 @@ jobs:
 
       - name: Install npm dependencies
         run: npm ci
+
+      - name: Save node_modules folder
+        uses: actions/cache/save@v3
+        id: node-modules-cache
+        with:
+          path: './node_modules'
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('**/package-lock.json') }}
 
       - name: Bundle library
         run: npm run build
@@ -71,8 +76,12 @@ jobs:
         with:
           node-version: 18
 
-      - name: Install npm dependencies
-        run: npm ci
+      - name: Restore node_modules folder
+        uses: actions/cache/restore@v3
+        id: node-modules-restore
+        with:
+          path: './node_modules'
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('**/package-lock.json') }}
 
       - name: Download dist folder
         uses: actions/download-artifact@v3
