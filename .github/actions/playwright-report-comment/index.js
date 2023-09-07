@@ -73,7 +73,8 @@ async function run(octokit, context, token) {
 		throw new Error(`Report file ${reportFile} not found. Make sure Playwright is configured to generate a JSON report.`)
 	}
 
-	const report = JSON.parse(await readFile(reportPath))
+	const data = JSON.parse(await readFile(reportPath))
+	const report = parseReport(data)
 
 	let commentId = null
 	setOutput('comment-id', commentId)
@@ -88,24 +89,22 @@ function parseReport(report) {
 	const version = report.config.version
 	const duration = report.config.metadata.totalTime || 0
 	const workers = report.config.metadata.actualWorkers || report.config.workers || 1
-	const projects = report.config.projects.length
 	const shards = report.config.shard.total
-	const suites = report.suites.flatMap((total, suite) => {
-		const suites = total + suite.suites.length
-	}, [])
-	const tests = report.suites.reduce((total, suite) => {
-		const specs = suite
-		const suites = total + suite.suites.length
-	}, 0)
+	const projects = report.config.projects.map(project => project.name)
+
+	const files = report.suites.map(file => file.title)
+	const suites = report.suites.flatMap((file) => [file.title, ...file.suites.map(suite => `${file.title} > ${suite.title}`)])
+	const specs = report.suites.flatMap((total, file) => [...file.specs, ...file.suites.map(suite => suite.specs)])
 
 	return {
 		version,
 		duration,
 		workers,
-		projects,
 		shards,
+		projects,
+		files,
 		suites,
-		tests
+		specs
 	}
 }
 
