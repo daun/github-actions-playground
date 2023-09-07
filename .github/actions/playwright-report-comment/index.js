@@ -30,18 +30,10 @@ const colors = {
 	duration: 'abb4bf'
 }
 
-;(async () => {
-	try {
-		const token = getInput('github-token')
-		const octokit = getOctokit(token)
-		await run(octokit, context, token);
-	} catch (error) {
-		setFailed(error.message)
-	}
-})()
-
-async function run(octokit, context, token) {
+async function run() {
 	const cwd = process.cwd()
+	const token = getInput('github-token')
+	const octokit = getOctokit(token)
 
 	const reportFile = getInput('report-file')
 	const commentTitle = getInput('comment-title')
@@ -242,38 +234,38 @@ function renderMarkdownTable(rows, headers = null) {
 }
 
 function formatDuration(milliseconds) {
-  const SECOND = 1000
-  const MINUTE = 60 * SECOND
-  const HOUR = 60 * MINUTE
-  const DAY = 24 * HOUR
+	const SECOND = 1000
+	const MINUTE = 60 * SECOND
+	const HOUR = 60 * MINUTE
+	const DAY = 24 * HOUR
 
-  let remaining = milliseconds
+	let remaining = milliseconds
 
-  const days = Math.floor(remaining / DAY)
-  remaining %= DAY
+	const days = Math.floor(remaining / DAY)
+	remaining %= DAY
 
-  const hours = Math.floor(remaining / HOUR)
-  remaining %= HOUR
+	const hours = Math.floor(remaining / HOUR)
+	remaining %= HOUR
 
-  const minutes = Math.floor(remaining / MINUTE)
-  remaining %= MINUTE
+	const minutes = Math.floor(remaining / MINUTE)
+	remaining %= MINUTE
 
-  const seconds = +(remaining / SECOND).toFixed(1)
+	const seconds = +(remaining / SECOND).toFixed(1)
 
-  return [
-    days && `${days} day${days !== 1 ? 's' : ''}`,
-    hours && `${hours} hour${hours !== 1 ? 's' : ''}`,
-    minutes && `${minutes} minute${minutes !== 1 ? 's' : ''}`,
-    seconds && `${seconds} second${seconds !== 1 ? 's' : ''}`,
-  ].filter(Boolean).join(', ')
+	return [
+		days && `${days} day${days !== 1 ? 's' : ''}`,
+		hours && `${hours} hour${hours !== 1 ? 's' : ''}`,
+		minutes && `${minutes} minute${minutes !== 1 ? 's' : ''}`,
+		seconds && `${seconds} second${seconds !== 1 ? 's' : ''}`,
+	].filter(Boolean).join(', ')
 }
 
 function stripLeadingWhitespace(str) {
-  return str.trim().replace(/(\n)([^\S\r\n]+)(\S)/g, '$1$3')
+	return str.trim().replace(/(\n)([^\S\r\n]+)(\S)/g, '$1$3')
 }
 
 function upperCaseFirst(str) {
-  return str.charAt(0).toUpperCase() + str.slice(1)
+	return str.charAt(0).toUpperCase() + str.slice(1)
 }
 
 async function fileExists(filename) {
@@ -287,4 +279,8 @@ async function fileExists(filename) {
 
 export async function readFile(path) {
 	return await fs.readFile(path, { encoding: 'utf8' })
+}
+
+if (process.env.GITHUB_ACTIONS === 'true') {
+	run().catch((error) => console.error(`Error running action: ${error.message}`))
 }
