@@ -10,14 +10,22 @@ const icons = {
 		passed: 'check-circle',
 		flaky: 'alert',
 		skipped: 'skip',
-		duration: 'clock'
+		stats: 'pulse',
+		duration: 'clock',
+		link: 'link-external',
+		report: 'package',
+		commit: 'git-pull-request'
 	},
 	emojis: {
 		failed: '❌',
 		passed: '✅',
 		flaky: '⚠️',
 		skipped: '⏭️',
-		duration: '⏱️'
+		stats: '',
+		duration: '',
+		link: '',
+		report: '',
+		commit: ''
 	}
 }
 
@@ -25,9 +33,8 @@ const colors = {
 	failed: 'da3633',
 	passed: '3fb950',
 	flaky: 'd29922',
-	skipped: 'abb4bf',
-	secondary: 'abb4bf',
-	duration: 'abb4bf'
+	skipped: '0967d9',
+	icon: 'abb4bf',
 }
 
 async function run() {
@@ -46,16 +53,21 @@ async function run() {
 		debug('pull request ' + JSON.stringify(payload, null, 2))
 	} catch (e) {}
 
-	let baseRef
-	let baseSha
+	const base = {}
+	const head = {}
+	const message = (payload.head_commit || payload.commits[payload.commits.length - 1])?.message
 	if (eventName == 'push') {
-		baseRef = payload.ref
-		baseSha = payload.before
-		console.log(`Commit pushed onto ${baseRef} (${baseSha})`)
+		base.ref = payload.ref
+		base.sha = payload.before
+		head.ref = payload.ref
+		head.sha = payload.after
+		console.log(`Commit pushed onto ${base.ref} (${head.sha})`)
 	} else if (eventName == 'pull_request' || eventName == 'pull_request_target') {
-		baseRef = payload.pull_request.base.ref
-		baseSha = payload.pull_request.base.sha
-		console.log(`PR #${pull_number} targeting ${baseRef} (${baseSha})`)
+		base.ref = payload.pull_request.base.ref
+		base.sha = payload.pull_request.base.sha
+		head.ref = payload.pull_request.head.ref
+		head.sha = payload.pull_request.head.sha
+		console.log(`PR #${pull_number} targeting ${base.ref} (${head.sha})`)
 	} else {
 		throw new Error(`Unsupported event type: ${eventName}. Only "pull_request", "pull_request_target", and "push" triggered workflows are currently supported.`)
 	}
@@ -69,7 +81,7 @@ async function run() {
 
 	const data = await readFile(reportPath)
 	const report = parseReport(data)
-	const summary = renderReportSummary(report, { title: commentTitle, iconStyle })
+	const summary = renderReportSummary(report, { commit: head.sha, message, title: commentTitle, iconStyle })
 
 	const prefix = '<!-- playwright-report-github-action -->'
 	const body = `${prefix}\n\n${summary}`
@@ -189,33 +201,49 @@ function parseSpec(spec, parents = []) {
 	return { passed, failed, flaky, skipped, title, path, line, column }
 }
 
-export function renderReportSummary(report, { title, iconStyle } = {}) {
+export function renderReportSummary(report, { commit, message, title, reportUrl, iconStyle } = {}) {
 	const { duration, failed, passed, flaky, skipped } = report
 	const paragraphs = []
 
+	// Title
+
 	paragraphs.push(`### ${title}`)
 
-	const stats = [
+	// Passed/failed tests
+
+	const tests = [
 		failed.length ? `${renderIcon('failed', { iconStyle })}  **${failed.length} failed**` : ``,
 		passed.length ? `${renderIcon('passed', { iconStyle })}  **${passed.length} passed**  ` : ``,
 		flaky.length ? `${renderIcon('flaky', { iconStyle })}  **${flaky.length} flaky**  ` : ``,
 		skipped.length ? `${renderIcon('skipped', { iconStyle })}  **${skipped.length} skipped**` : ``,
-		`${renderIcon('duration', { iconStyle })}  ${formatDuration(duration)}`
 	]
+	paragraphs.push(tests.filter(Boolean).join('  \n'))
 
+	// Stats about test run
+
+	paragraphs.push(`#### Details`)
+
+	const stats = [
+		reportUrl ? `${renderIcon('report', { iconStyle })}  [Open report ↗︎](${reportUrl})` : '',
+		`${renderIcon('stats', { iconStyle })}  ${report.specs.length} ${n('test', report.specs.length)} across ${report.suites.length} ${n('suite', report.suites.length)}`,
+		`${renderIcon('duration', { iconStyle })}  ${formatDuration(duration)}`,
+		commit && message ? `${renderIcon('commit', { iconStyle })}  ${message} (${commit.slice(0, 7)})` : '',
+		commit && !message ? `${renderIcon('commit', { iconStyle })}  ${commit.slice(0, 7)}` : '',
+	]
 	paragraphs.push(stats.filter(Boolean).join('  \n'))
+
+	// Lists of failed/skipped tests
 
 	const details = ['failed', 'flaky', 'skipped'].map((status) => {
 		const tests = report[status]
 		if (tests.length) {
 			return `
-				<details>
+				<details ${ status === 'failed' ? 'open' : '' }>
 					<summary><strong>${upperCaseFirst(status)} tests</strong></summary>
 					<ul>${tests.map((test) => `<li>${test.title}</li>`).join('\n')}</ul>
 				</details>`
 		}
 	})
-
 	paragraphs.push(details.filter(Boolean).map((md) => md.trim()).join('\n'))
 
 	return paragraphs.map(p => p.trim()).filter(Boolean).join('\n\n')
@@ -223,7 +251,8 @@ export function renderReportSummary(report, { title, iconStyle } = {}) {
 
 export function renderIcon(status, { iconStyle }) {
 	if (iconStyle === 'octicons') {
-		return createOcticonUrl(icons.octicons[status], { label: status, color: colors[status] })
+		const color = colors[status] || colors.icon
+		return createOcticonUrl(icons.octicons[status], { label: status, color })
 	} else {
 		return icons.emojis[status] || ''
 	}
@@ -266,19 +295,19 @@ function formatDuration(milliseconds) {
 	const seconds = +(remaining / SECOND).toFixed(1)
 
 	return [
-		days && `${days} day${days !== 1 ? 's' : ''}`,
-		hours && `${hours} hour${hours !== 1 ? 's' : ''}`,
-		minutes && `${minutes} minute${minutes !== 1 ? 's' : ''}`,
-		seconds && `${seconds} second${seconds !== 1 ? 's' : ''}`,
+		days && `${days} ${n('day', days)}`,
+		hours && `${hours} ${n('hour', hours)}`,
+		minutes && `${minutes} ${n('minute', minutes)}`,
+		seconds && `${seconds} ${n('second', seconds)}`,
 	].filter(Boolean).join(', ')
-}
-
-function stripLeadingWhitespace(str) {
-	return str.trim().replace(/(\n)([^\S\r\n]+)(\S)/g, '$1$3')
 }
 
 function upperCaseFirst(str) {
 	return str.charAt(0).toUpperCase() + str.slice(1)
+}
+
+function n(str, n) {
+	return n === 1 ? str : `${str}s`
 }
 
 async function fileExists(filename) {

@@ -9,7 +9,13 @@ async function test() {
 	// console.log(data)
 	const report = parseReport(data)
 	// console.log(report)
-	const summary = renderReportSummary(report, { title: 'Playwright test results', iconStyle: 'octicons' })
+	const summary = renderReportSummary(report, {
+		commit: '999003bc19c94ba5e916a3ac5c9598dd54bed36c',
+		message: 'feat: add new feature',
+		title: 'Playwright test results',
+		reportUrl: 'http://report.url/report/',
+		iconStyle: 'octicons'
+	})
 	console.log(summary)
 }
 
