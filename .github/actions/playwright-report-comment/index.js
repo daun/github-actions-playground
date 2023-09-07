@@ -179,8 +179,8 @@ function parseSpec(spec, parents = []) {
 	const status = test.status
 	const project = test.projectName
 
-	const path = [project, ...parents.map(p => p.title), spec.title]
-	const title = path.filter(Boolean).join(' > ')
+	const path = [project, ...parents.map(p => p.title), spec.title].filter(Boolean)
+	const title = path.join(' → ')
 
 	const flaky = status === 'flaky'
 	const skipped = status === 'skipped'
@@ -204,6 +204,19 @@ export function renderReportSummary(report, { title, iconStyle } = {}) {
 	]
 
 	paragraphs.push(stats.filter(Boolean).join('  \n'))
+
+	const details = ['failed', 'flaky', 'skipped'].map((status) => {
+		const tests = report[status]
+		if (tests.length) {
+			return `
+				<details>
+					<summary><strong>${upperCaseFirst(status)} tests</strong></summary>
+					<ul>${tests.map((test) => `<li>${test.title}</li>`).join('\n')}</ul>
+				</details>`
+		}
+	})
+
+	paragraphs.push(details.filter(Boolean).map((md) => md.trim()).join('\n'))
 
 	return paragraphs.map(p => p.trim()).filter(Boolean).join('\n\n')
 }
