@@ -1,4 +1,5 @@
 import fs from 'fs/promises'
+import path from 'path'
 import { getInput, setOutput, setFailed, startGroup, endGroup, debug } from '@actions/core'
 import { context, getOctokit } from '@actions/github'
 
@@ -28,7 +29,7 @@ const colors = {
 	secondary: 'abb4bf'
 }
 
-(async () => {
+;(async () => {
 	try {
 		const token = getInput('github-token')
 		const octokit = getOctokit(token)
@@ -73,7 +74,7 @@ async function run(octokit, context, token) {
 		throw new Error(`Report file ${reportFile} not found. Make sure Playwright is configured to generate a JSON report.`)
 	}
 
-	const data = JSON.parse(await readFile(reportPath))
+	const data = await readFile(reportPath)
 	const report = parseReport(data)
 	const summary = renderReportSummary(report, { title: commentTitle, iconStyle })
 
@@ -128,7 +129,8 @@ async function run(octokit, context, token) {
 	setOutput('comment-id', commentId)
 }
 
-function parseReport(report) {
+export function parseReport(data) {
+	const report = JSON.parse(data)
 	if (!report?.config?.metadata || !report?.suites) {
 		debug('Invalid report file', JSON.stringify(report, null, 2))
 		throw new Error('Invalid report file')
@@ -137,12 +139,22 @@ function parseReport(report) {
 	const version = report.config.version
 	const duration = report.config.metadata.totalTime || 0
 	const workers = report.config.metadata.actualWorkers || report.config.workers || 1
-	const shards = report.config.shard.total
+	const shards = report.config.shard?.total || 0
 	const projects = report.config.projects.map(project => project.name)
 
 	const files = report.suites.map(file => file.title)
-	const suites = report.suites.flatMap((file) => [file.title, ...file.suites.map(suite => `${file.title} > ${suite.title}`)])
-	const specs = report.suites.flatMap((total, file) => [...file.specs, ...file.suites.map(suite => suite.specs)])
+	const suites = report.suites.flatMap((file) => file.suites.length ? [...file.suites.map(suite => `${file.title} > ${suite.title}`)] : [file.title])
+	const specs = report.suites.reduce((all, file) => {
+		file.specs.forEach(spec => {
+			all.push(parseSpec(spec, [file]))
+		})
+		file.suites.forEach(suite => {
+			suite.specs.forEach(spec => {
+				all.push(parseSpec(spec, [file, suite]))
+			})
+		})
+		return all
+	}, [])
 
 	return {
 		version,
@@ -156,7 +168,17 @@ function parseReport(report) {
 	}
 }
 
-function renderReportSummary(report, { title, iconStyle }) {
+function parseSpec(spec, parents = []) {
+	const { ok, line, column } = spec
+	const project = spec.tests[0]?.projectName
+	const path = [project, ...parents.map(p => p.title), spec.title]
+	const title = path.filter(Boolean).join(' > ')
+	const flaky = ok && spec.tests.some(t => t.status === 'flaky')
+	const skipped = ok && spec.tests.some(t => t.status === 'skipped')
+	return { ok, flaky, skipped, title, path, line, column }
+}
+
+export function renderReportSummary(report, { title, iconStyle }) {
 	const paragraphs = []
 
 	paragraphs.push(`### ${title}`)
@@ -164,7 +186,7 @@ function renderReportSummary(report, { title, iconStyle }) {
 	return paragraphs.map(p => p.trim()).filter(Boolean).join('\n\n')
 }
 
-function renderIcon(status, { iconStyle }) {
+export function renderIcon(status, { iconStyle }) {
 	if (iconStyle === 'octicons') {
 		return createOcticonUrl(icons.octicons[status], { label: status, color: colors[status] })
 	} else {
@@ -198,10 +220,6 @@ async function fileExists(filename) {
 	}
 }
 
-async function readFile(path) {
+export async function readFile(path) {
 	return await fs.readFile(path, { encoding: 'utf8' })
-}
-
-function toBool(v) {
-	return /^(1|true|yes)$/.test(v)
 }

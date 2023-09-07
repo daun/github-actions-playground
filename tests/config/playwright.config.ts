@@ -21,7 +21,7 @@ export default defineConfig({
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: !!process.env.CI,
   /* Retry on CI only */
-  retries: process.env.CI ? 1 : 0,
+  retries: process.env.CI ? 1 : 4,
   /* Limit parallel workers on CI, use default locally. */
   workers: process.env.CI ? 4 : undefined,
   // Limit the number of failures on CI to save resources
@@ -37,6 +37,7 @@ export default defineConfig({
   ] : [
     ['list'],
     ['html', { outputFolder: '../reports/html', open: 'on-failure' }],
+    ['json', { outputFile: '../reports/json/report.json' }],
   ],
 
   expect: {

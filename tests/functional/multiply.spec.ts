@@ -9,4 +9,7 @@ test.describe('multiply', () => {
 	test('multiplies', async () => {
 		expect(multiply(3, 2)).toBe(6);
 	});
+	test('skips', async () => {
+		test.skip();
+	});
 });
