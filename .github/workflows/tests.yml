@@ -161,6 +161,9 @@ jobs:
           path: playwright-report
           retention-days: 14
 
+      - name: Create report comment
+        uses: ../actions/playwright-report-comment
+
       # - name: Read markdown report
       #   uses: andstor/file-reader-action@v1
       #   id: markdown-report

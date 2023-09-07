@@ -12,6 +12,7 @@ inputs:
   report-file:
     description: 'Path to the generated json report file, if differing from the default'
     required: false
+    default: 'results.json'
   comment-title:
     description: 'Customize the title of the pull request comment'
     required: false
@@ -19,7 +20,7 @@ inputs:
   icon-style:
     description: 'The icons to use: octicons or emoji'
     required: false
-    default: octicons
+    default: 'octicons'
 outputs:
   comment-id:
     description: 'The ID of the comment that was created or updated'
