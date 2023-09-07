@@ -55,7 +55,6 @@ async function run() {
 
 	const base = {}
 	const head = {}
-	const message = (payload.head_commit || payload.commits[payload.commits.length - 1])?.message
 	if (eventName == 'push') {
 		base.ref = payload.ref
 		base.sha = payload.before
@@ -81,7 +80,7 @@ async function run() {
 
 	const data = await readFile(reportPath)
 	const report = parseReport(data)
-	const summary = renderReportSummary(report, { commit: head.sha, message, title: commentTitle, iconStyle })
+	const summary = renderReportSummary(report, { commit: head.sha, title: commentTitle, iconStyle })
 
 	const prefix = '<!-- playwright-report-github-action -->'
 	const body = `${prefix}\n\n${summary}`
