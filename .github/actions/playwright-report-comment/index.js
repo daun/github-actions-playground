@@ -26,7 +26,8 @@ const colors = {
 	passed: '3fb950',
 	flaky: 'd29922',
 	skipped: 'abb4bf',
-	secondary: 'abb4bf'
+	secondary: 'abb4bf',
+	duration: 'abb4bf'
 }
 
 ;(async () => {
@@ -87,38 +88,42 @@ async function run(octokit, context, token) {
 	} else {
 		startGroup(`Commenting test report on PR`)
 		try {
-			const { data: comments } = await octokit.issues.listComments({ ...repo, issue_number: pull_number })
+			const { data: comments } = await octokit.rest.issues.listComments({ ...repo, issue_number: pull_number })
 			const existingComment = comments.findLast(c => c.user.type === 'Bot' && c.body.includes(prefix)) || {}
 			commentId = existingComment.id || null
 		} catch (error) {
-			console.log(`Error fetching existing comments: ${error.message}`)
+			console.error(`Error fetching existing comments: ${error.message}`)
 		}
 
 		if (commentId) {
-			console.log(`Updating previous comment #${commentId}`)
+			console.log(`Found previous comment #${commentId}`)
 			try {
-				await octokit.issues.updateComment({ ...repo, comment_id: commentId, body })
+				await octokit.rest.issues.updateComment({ ...repo, comment_id: commentId, body })
+				console.log(`Updated previous comment #${commentId}`)
 			} catch (error) {
-				console.log(`Error updating previous comment: ${error.message}`)
+				console.error(`Error updating previous comment: ${error.message}`)
 				commentId = null
 			}
-		} else {
+		}
+
+		if (!commentId) {
 			console.log('Creating new comment')
 			try {
-				const { data: newComment } = await octokit.issues.createComment({ ...repo, issue_number: pull_number, body })
+				const { data: newComment } = await octokit.rest.issues.createComment({ ...repo, issue_number: pull_number, body })
 				commentId = newComment.id
+				console.log(`Created new comment #${commentId}`)
 			} catch (error) {
-				console.log(`Error creating comment: ${error.message}`)
+				console.error(`Error creating comment: ${error.message}`)
 				console.log(`Submitting PR review comment instead...`)
 				try {
 					const { issue } = context
-					await octokit.pulls.createReview({ owner, repo: issue.repo, pull_number: issue.number, event: 'COMMENT', body })
+					await octokit.rest.pulls.createReview({ owner, repo: issue.repo, pull_number: issue.number, event: 'COMMENT', body })
 				} catch (e) {
-					console.log(`Error creating PR review: ${error.message}`)
+					console.error(`Error creating PR review: ${error.message}`)
 				}
 			}
 		}
-		endGroup();
+		endGroup()
 	}
 
 	if (!commentId) {
@@ -155,6 +160,10 @@ export function parseReport(data) {
 		})
 		return all
 	}, [])
+	const failed = specs.filter(spec => spec.failed)
+	const passed = specs.filter(spec => spec.passed)
+	const flaky = specs.filter(spec => spec.flaky)
+	const skipped = specs.filter(spec => spec.skipped)
 
 	return {
 		version,
@@ -164,24 +173,45 @@ export function parseReport(data) {
 		projects,
 		files,
 		suites,
-		specs
+		specs,
+		failed,
+		passed,
+		flaky,
+		skipped
 	}
 }
 
 function parseSpec(spec, parents = []) {
 	const { ok, line, column } = spec
-	const project = spec.tests[0]?.projectName
+	const test = spec.tests[0]
+	const status = test.status
+	const project = test.projectName
+
 	const path = [project, ...parents.map(p => p.title), spec.title]
 	const title = path.filter(Boolean).join(' > ')
-	const flaky = ok && spec.tests.some(t => t.status === 'flaky')
-	const skipped = ok && spec.tests.some(t => t.status === 'skipped')
-	return { ok, flaky, skipped, title, path, line, column }
+
+	const flaky = status === 'flaky'
+	const skipped = status === 'skipped'
+	const failed = !ok || status === 'unexpected'
+	const passed = ok && !skipped && !failed
+	return { passed, failed, flaky, skipped, title, path, line, column }
 }
 
-export function renderReportSummary(report, { title, iconStyle }) {
+export function renderReportSummary(report, { title, iconStyle } = {}) {
+	const { duration, failed, passed, flaky, skipped } = report
 	const paragraphs = []
 
 	paragraphs.push(`### ${title}`)
+
+	const stats = [
+		failed.length ? `${renderIcon('failed', { iconStyle })}  **${failed.length} failed**` : ``,
+		passed.length ? `${renderIcon('passed', { iconStyle })}  **${passed.length} passed**  ` : ``,
+		flaky.length ? `${renderIcon('flaky', { iconStyle })}  **${flaky.length} flaky**  ` : ``,
+		skipped.length ? `${renderIcon('skipped', { iconStyle })}  **${skipped.length} skipped**` : ``,
+		`${renderIcon('duration', { iconStyle })}  ${formatDuration(duration)}`
+	]
+
+	paragraphs.push(stats.filter(Boolean).join('  \n'))
 
 	return paragraphs.map(p => p.trim()).filter(Boolean).join('\n\n')
 }
@@ -209,6 +239,41 @@ function renderMarkdownTable(rows, headers = null) {
 	const align = [':---', ':---:', ':---:', ':---:'].slice(0, rows[0].length)
 	const lines = [headers, align, ...rows].filter(Boolean)
 	return lines.map(columns => `| ${columns.join(' | ')} |`).join('\n')
+}
+
+function formatDuration(milliseconds) {
+  const SECOND = 1000
+  const MINUTE = 60 * SECOND
+  const HOUR = 60 * MINUTE
+  const DAY = 24 * HOUR
+
+  let remaining = milliseconds
+
+  const days = Math.floor(remaining / DAY)
+  remaining %= DAY
+
+  const hours = Math.floor(remaining / HOUR)
+  remaining %= HOUR
+
+  const minutes = Math.floor(remaining / MINUTE)
+  remaining %= MINUTE
+
+  const seconds = +(remaining / SECOND).toFixed(1)
+
+  return [
+    days && `${days} day${days !== 1 ? 's' : ''}`,
+    hours && `${hours} hour${hours !== 1 ? 's' : ''}`,
+    minutes && `${minutes} minute${minutes !== 1 ? 's' : ''}`,
+    seconds && `${seconds} second${seconds !== 1 ? 's' : ''}`,
+  ].filter(Boolean).join(', ')
+}
+
+function stripLeadingWhitespace(str) {
+  return str.trim().replace(/(\n)([^\S\r\n]+)(\S)/g, '$1$3')
+}
+
+function upperCaseFirst(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1)
 }
 
 async function fileExists(filename) {
