@@ -152,7 +152,7 @@ jobs:
           path: playwright-blob-reports
 
       - name: Merge blob reports
-        run: npx playwright merge-reports --reporter html,json ./playwright-blob-reports
+        run: PLAYWRIGHT_JSON_OUTPUT_NAME=results.json npx playwright merge-reports --reporter html,json ./playwright-blob-reports
 
       - name: Upload HTML report
         uses: actions/upload-artifact@v3
@@ -163,6 +163,8 @@ jobs:
 
       - name: Create report comment
         uses: ./.github/actions/playwright-report-comment
+        with:
+          report-file: results.json
 
       # - name: Read markdown report
       #   uses: andstor/file-reader-action@v1

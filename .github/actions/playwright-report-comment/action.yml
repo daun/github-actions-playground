@@ -10,9 +10,8 @@ inputs:
     required: false
     default: ${{ github.token }}
   report-file:
-    description: 'Path to the generated json report file, if differing from the default'
-    required: false
-    default: 'results.json'
+    description: 'Path to the generated json report file'
+    required: true
   comment-title:
     description: 'Customize the title of the pull request comment'
     required: false
