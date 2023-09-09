@@ -16,7 +16,7 @@ jobs:
       playwright-version: ${{ steps.playwright-version.outputs.version }}
     steps:
       - name: Check out repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up node
         uses: actions/setup-node@v3
@@ -82,7 +82,7 @@ jobs:
         # project: [chromium, firefox, webkit]
     steps:
       - name: Check out repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up node
         uses: actions/setup-node@v3
@@ -131,9 +131,10 @@ jobs:
     needs: [test]
     permissions:
       pull-requests: write
+      contents: write
     steps:
       - name: Check out repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up node
         uses: actions/setup-node@v3
@@ -164,10 +165,11 @@ jobs:
           retention-days: 14
 
       - name: Check out reports branch
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: reports
           path: reports-branch
+          fetch-depth: 0
 
       - name: Copy html report and push reports branch
         run: |
