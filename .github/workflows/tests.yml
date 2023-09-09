@@ -180,7 +180,7 @@ jobs:
         run: |
           name=$(date +"%Y-%m-%d-%H-%M-%S")
           echo "name=$name" >> $GITHUB_OUTPUT
-          echo "url=https://github-playground-test-reports.netlify.app/$name" >> $GITHUB_OUTPUT
+          echo "url=https://github-playground-test-reports.netlify.app/$name/" >> $GITHUB_OUTPUT
 
       - name: Copy html report and push reports branch
         run: |
@@ -193,7 +193,7 @@ jobs:
           git push
 
       - name: Create report comment
-        uses: daun/playwright-report-comment@v1.1.1
+        uses: daun/playwright-report-comment@v1.1.2
         with:
           report-file: results.json
           report-url: ${{ steps.report-id.outputs.url }}
