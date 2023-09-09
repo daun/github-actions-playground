@@ -163,6 +163,22 @@ jobs:
           path: playwright-report
           retention-days: 14
 
+      - name: Check out reports branch
+        uses: actions/checkout@v3
+        with:
+          ref: reports
+          path: reports
+
+      - name: Copy html report and push reports branch
+        run: |
+          mkdir -p reports
+          cp -r playwright-report reports/$(date +"%Y-%m-%d-%H-%M-%S")
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add .
+          git commit -m "Save HTML report"
+          git push
+
       - name: Create report comment
         uses: ./.github/actions/playwright-report-comment
         with:
