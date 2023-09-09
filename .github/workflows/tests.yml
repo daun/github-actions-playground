@@ -171,9 +171,16 @@ jobs:
           path: reports-branch
           fetch-depth: 0
 
+      - name: Generate report name and URL
+        id: report-id
+        run: |
+          name=$(date +"%Y-%m-%d-%H-%M-%S")
+          echo "name=$name" >> $GITHUB_OUTPUT
+          echo "url=https://github-playground-test-reports.netlify.app/$name" >> $GITHUB_OUTPUT
+
       - name: Copy html report and push reports branch
         run: |
-          cp -r playwright-report reports-branch/reports/$(date +"%Y-%m-%d-%H-%M-%S")
+          cp -r playwright-report reports-branch/reports/${{ steps.report-id.outputs.name }}
           cd reports-branch
           git config user.name github-actions
           git config user.email github-actions@github.com
@@ -185,6 +192,7 @@ jobs:
         uses: daun/playwright-report-comment@v1.1.1
         with:
           report-file: results.json
+          report-url: ${{ steps.report-id.outputs.url }}
 
       # - name: Create report comment
       #   uses: ./.github/actions/playwright-report-comment
