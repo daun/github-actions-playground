@@ -177,35 +177,16 @@ jobs:
           cd reports-branch
           git config user.name github-actions
           git config user.email github-actions@github.com
-          git add .
+          git add reports
           git commit -m "Save HTML report"
           git push
 
       - name: Create report comment
-        uses: ./.github/actions/playwright-report-comment
+        uses: daun/playwright-report-comment@v1.1.1
         with:
           report-file: results.json
 
-      # - name: Read markdown report
-      #   uses: andstor/file-reader-action@v1
-      #   id: markdown-report
+      # - name: Create report comment
+      #   uses: ./.github/actions/playwright-report-comment
       #   with:
-      #     path: playwright-report/report.md
-
-      # - name: Find report comment
-      #   uses: peter-evans/find-comment@v2
-      #   id: find-comment
-      #   with:
-      #     issue-number: ${{ github.event.pull_request.number }}
-      #     comment-author: 'github-actions[bot]'
-      #     body-includes: playwright-report-github-action
-
-      # - name: Create or update report comment
-      #   uses: peter-evans/create-or-update-comment@v3
-      #   with:
-      #     issue-number: ${{ github.event.pull_request.number }}
-      #     comment-id: ${{ steps.find-comment.outputs.comment-id }}
-      #     edit-mode: replace
-      #     body: |
-      #       <!-- playwright-report-github-action -->
-      #       ${{ steps.markdown-report.outputs.contents }}
+      #     report-file: results.json
