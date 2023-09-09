@@ -199,11 +199,11 @@ jobs:
           report-file: results.json
           report-url: ${{ steps.report-id.outputs.url }}
 
-      - name: Generate list using Markdown
-        run: |
-          echo "${{ steps.report-summary.outputs.summary }}" >> $GITHUB_STEP_SUMMARY
-
       # - name: Create report comment
       #   uses: ./.github/actions/playwright-report-comment
       #   with:
       #     report-file: results.json
+
+      - name: Create job summary
+        run: |
+          echo "${{ steps.report-summary.outputs.summary }}" >> $GITHUB_STEP_SUMMARY
