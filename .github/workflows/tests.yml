@@ -198,12 +198,9 @@ jobs:
         with:
           report-file: results.json
           report-url: ${{ steps.report-id.outputs.url }}
+          job-summary: true
 
       # - name: Create report comment
       #   uses: ./.github/actions/playwright-report-comment
       #   with:
       #     report-file: results.json
-
-      - name: Create job summary
-        run: |
-          echo "${{ steps.report-summary.outputs.summary }}" >> $GITHUB_STEP_SUMMARY
