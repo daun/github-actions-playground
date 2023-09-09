@@ -189,7 +189,7 @@ jobs:
           git config user.name github-actions
           git config user.email github-actions@github.com
           git add reports
-          git commit -m "Save HTML report"
+          git commit -m "Create report ${{ steps.report-id.outputs.name }}"
           git push
 
       - name: Create report comment
