@@ -193,10 +193,15 @@ jobs:
           git push
 
       - name: Create report comment
-        uses: daun/playwright-report-comment@v1.1.2
+        id: report-summary
+        uses: daun/playwright-report-summary@v2.0.0
         with:
           report-file: results.json
           report-url: ${{ steps.report-id.outputs.url }}
+
+      - name: Generate list using Markdown
+        run: |
+          echo "${{ steps.report-summary.outputs.summary }}" >> $GITHUB_STEP_SUMMARY
 
       # - name: Create report comment
       #   uses: ./.github/actions/playwright-report-comment
