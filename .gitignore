@@ -1,0 +1,41 @@
+# Files to never ignore (even if they match other patterns)
+!.gitignore
+!.htaccess
+!web.config
+
+# OS-specific files
+.DS_Store
+*.DS_Store
+Thumbs.db
+
+# Dependency directories
+node_modules
+bower_components
+
+# Editors and IDEs
+*.sublime-project
+*.sublime-workspace
+.idea
+.vscode
+
+# Wiki related
+wiki-common
+wiki-images files
+wiki-wishlist
+
+# Build or output files and directories
+/lib
+/dist
+*.tgz
+
+# Testing tools and outputs
+/cypress/fixtures/dist/
+/cypress/screenshots/
+/cypress/videos/
+/tests/reports/
+/tests/results/
+/tests/fixtures/dist/
+/playwright/.cache/
+/playwright-report/
+/coverage
+.nyc_output
