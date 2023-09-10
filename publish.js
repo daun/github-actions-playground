@@ -2,7 +2,8 @@ import fs from 'fs/promises';
 import path from 'path';
 
 const reportRoot = './reports';
-const reportAge = 6; // months
+const reportMaxAge = 6; // months
+const indexTemplate = './assets/index.template.html';
 
 (async () => {
     console.log('Publishing reports...');
@@ -45,7 +46,8 @@ async function updateIndexHtml() {
         const dirs = await getReportFolders();
         const reportPath = path.resolve(process.cwd(), reportRoot);
         const indexPath = path.join(reportPath, 'index.html');
-        const htmlContent = await fs.readFile(indexPath, 'utf-8');
+        const templatePath = path.resolve(process.cwd(), indexTemplate);
+        const htmlContent = await fs.readFile(templatePath, 'utf-8');
 
         const startMarker = '<!-- report-list-start -->';
         const endMarker = '<!-- report-list-end -->';
@@ -71,7 +73,7 @@ function formatReportName(dirName) {
 
 function shouldBeDeleted(dirName) {
     const dateThreshold = new Date();
-    dateThreshold.setMonth(dateThreshold.getMonth() - reportAge);
+    dateThreshold.setMonth(dateThreshold.getMonth() - reportMaxAge);
     return parseDateFromDirName(dirName) < dateThreshold;
 }
 
