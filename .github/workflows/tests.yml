@@ -133,7 +133,8 @@ jobs:
         run: |
           name=$(date +"%Y-%m-%d-%H-%M-%S")
           echo "name=$name" >> $GITHUB_OUTPUT
-          echo "url=https://github-playground-test-reports.netlify.app/$name/" >> $GITHUB_OUTPUT
+          echo "path=reports/$name" >> $GITHUB_OUTPUT
+          echo "url=https://github-playground-test-reports.netlify.app/reports/$name/" >> $GITHUB_OUTPUT
 
       - name: Copy html report and push reports branch
         run: |
