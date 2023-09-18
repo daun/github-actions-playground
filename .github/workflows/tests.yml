@@ -14,8 +14,6 @@ jobs:
   install:
     name: Install
     runs-on: ubuntu-latest
-    container:
-      image: mcr.microsoft.com/playwright:v1.38.0
     timeout-minutes: 5
     steps:
       - name: Check out repository
@@ -28,10 +26,6 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
-
-      - name: Get playwright version
-        id: playwright-version
-        run: echo "version=$(cat ./package-lock.json | jq -re '.packages["node_modules/@playwright/test"].version')" >> $GITHUB_OUTPUT
 
       - name: Bundle library
         run: npm run build
@@ -67,6 +61,10 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Get playwright version
+        id: playwright-version
+        run: echo "version=$(cat ./package-lock.json | jq -re '.packages["node_modules/@playwright/test"].version')" >> $GITHUB_OUTPUT
 
       - name: Download dist folder
         uses: actions/download-artifact@v3
