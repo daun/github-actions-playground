@@ -146,6 +146,10 @@ jobs:
           git commit -m "Workflow: add html report for run ${{ github.run_id }} (attempt: ${{ github.run_attempt }})"
           git push
 
+      - name: Output report url
+        run: |
+          echo "::notice title=Published Playwright test report::${{ steps.report-id.outputs.url }}"
+
       - name: Create report comment
         id: report-summary
         uses: daun/playwright-report-summary@v2.1.0
