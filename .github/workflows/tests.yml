@@ -140,8 +140,8 @@ jobs:
         run: |
           cp -r playwright-report reports-branch/reports/${{ steps.report-id.outputs.name }}
           cd reports-branch
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name github-actions
+          git config user.email github-actions@github.com
           git add reports
           git commit -m "Workflow: add html report for run ${{ github.run_id }} (attempt: ${{ github.run_attempt }})"
           git push
