@@ -125,7 +125,8 @@ jobs:
         run: |
           name=$(date +"%Y-%m-%d-%H-%M-%S")
           echo "name=$name" >> $GITHUB_OUTPUT
-          echo "url=https://swup.github.io/swup/$name/" >> $GITHUB_OUTPUT
+          echo "path=reports/$name" >> $GITHUB_OUTPUT
+          echo "url=https://swup.github.io/swup/reports/$name" >> $GITHUB_OUTPUT
 
       - name: Check out reports branch
         uses: actions/checkout@v4
@@ -136,9 +137,9 @@ jobs:
 
       - name: Copy html report
         run: |
-          mkdir -p test-report-branch/reports/${{ steps.report-id.outputs.name }}
-          cp -r playwright-report test-report-branch/reports/${{ steps.report-id.outputs.name }}
           cd test-report-branch
+          mkdir -p ${{ steps.report-id.outputs.path }}
+          cp -r ../playwright-report ${{ steps.report-id.outputs.path }}
 
       - name: Set git user
         # see: https://github.com/actions/checkout/issues/13#issuecomment-724415212
@@ -168,7 +169,7 @@ jobs:
 
       - name: Output report url
         run: |
-          echo "::notice title=Published Playwright test rReport::${{ steps.report-id.outputs.url }}"
+          echo "::notice title=Published Playwright test report::${{ steps.report-id.outputs.url }}"
 
       - name: Create report comment
         id: report-summary
