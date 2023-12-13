@@ -170,7 +170,7 @@ jobs:
           report-url: ${{ steps.report-id.outputs.url }}
           job-summary: true
 
-      - name: Create report comment
+      - name: Create another report comment
         id: report-summary-2
         uses: daun/playwright-report-summary@v3
         with:
