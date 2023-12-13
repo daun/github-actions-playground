@@ -7,6 +7,6 @@ test.describe('subtract', () => {
 		expect(subtract(1, 2)).toBeDefined();
 	});
 	test('subtracts', async () => {
-		expect(subtract(3, 2)).toBe(1);
+		expect(subtract(3, 2)).toBe(4);
 	});
 });
