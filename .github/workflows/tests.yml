@@ -171,7 +171,7 @@ jobs:
           job-summary: true
 
       - name: Create report comment
-        id: report-summary
+        id: report-summary-2
         uses: daun/playwright-report-summary@v3
         with:
           report-file: results.json
