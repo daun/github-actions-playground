@@ -168,6 +168,7 @@ jobs:
         with:
           report-file: results.json
           report-url: ${{ steps.report-id.outputs.url }}
+          report-tag: report-summary-1
           job-summary: true
 
       - name: Create another report comment
@@ -176,6 +177,7 @@ jobs:
         with:
           report-file: results.json
           report-url: ${{ steps.report-id.outputs.url }}
+          report-tag: report-summary-2
           job-summary: true
 
       # - name: Create report comment
