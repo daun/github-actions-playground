@@ -164,7 +164,8 @@ jobs:
 
       - name: Create report comment
         id: report-summary
-        uses: daun/playwright-report-summary@v3
+        # uses: daun/playwright-report-summary@v3
+        uses: daun/playwright-report-summary@feat/manual-dispatch
         with:
           report-file: results.json
           report-url: ${{ steps.report-id.outputs.url }}
@@ -173,7 +174,8 @@ jobs:
 
       - name: Create another report comment
         id: report-summary-2
-        uses: daun/playwright-report-summary@v3
+        # uses: daun/playwright-report-summary@v3
+        uses: daun/playwright-report-summary@feat/manual-dispatch
         with:
           report-file: results.json
           report-url: ${{ steps.report-id.outputs.url }}
