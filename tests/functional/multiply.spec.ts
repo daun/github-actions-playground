@@ -7,7 +7,7 @@ test.describe('multiply', () => {
 		expect(multiply(1, 2)).toBeDefined();
 	});
 	test('multiplies', async () => {
-		expect(multiply(3, 2)).toBe(6);
+		expect(multiply(3, 2)).toBe(Math.random() > 0.5 ? 6 : 7);
 	});
 	test('skips', async () => {
 		test.skip();
