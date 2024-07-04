@@ -32,5 +32,6 @@ jobs:
 
     - name: Create report comment
       uses: ./.github/actions/playwright-report-summary
+      if: always()
       with:
         report-file: results.json
