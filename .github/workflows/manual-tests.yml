@@ -31,6 +31,6 @@ jobs:
       run: npx playwright test --config ./tests/config/playwright.config.ts
 
     - name: Create report comment
-      uses: daun/playwright-report-summary@v3
+      uses: ./.github/actions/playwright-report-summary
       with:
         report-file: results.json
