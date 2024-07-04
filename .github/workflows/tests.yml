@@ -4,7 +4,7 @@ on:
   push:
     branches: [ main, master, next ]
   pull_request:
-    branches-ignore: [ reports, notests ]
+    branches-ignore: [ reports ]
   workflow_dispatch:
 
 concurrency:
