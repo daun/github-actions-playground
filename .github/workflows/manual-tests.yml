@@ -1,0 +1,35 @@
+name: Manual Tests
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  test:
+    if: ${{ github.event.issue.pull_request && startsWith(github.event.comment.body, '/playwright') }}
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+      with:
+        ref: refs/pull/${{ github.event.issue.number }}/head
+
+    - name: Set up node
+        uses: actions/setup-node@v4
+      with:
+        node-version: lts/*
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Install Playwright browsers
+      run: npx playwright install --with-deps
+
+    - name: Run Playwright tests
+      run: npx playwright test --config ./tests/config/playwright.config.ts
+
+    - name: Create Playwright report comment
+      uses: daun/playwright-report-summary@v3
+      with:
+        report-file: results.json
