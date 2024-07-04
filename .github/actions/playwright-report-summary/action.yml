@@ -1,9 +1,11 @@
 name: 'Playwright report comment'
 description: 'Report Playwright test results as pull request comments'
 author: 'Philipp Daun <daun@daun.ltd>'
+
 branding:
   icon: 'message-circle'
   color: 'purple'
+
 inputs:
   github-token:
     description: 'The GitHub access token'
@@ -15,15 +17,25 @@ inputs:
   report-url:
     description: 'URL to the generated html report, if uploaded'
     required: false
+  report-tag:
+    description: 'Tag reports to distinguish test runs in the same workflow instead of overwriting'
+    required: false
   comment-title:
     description: 'Customize the title of the pull request comment'
     required: false
     default: 'Playwright test results'
+  job-summary:
+    description: 'Create a job summary comment for the workflow run'
+    required: false
+    default: false
   icon-style:
     description: 'The icons to use: octicons or emoji'
     required: false
     default: 'octicons'
+
 outputs:
+  summary:
+    description: 'The rendered markdown summary of the test report'
   comment-id:
     description: 'The ID of the comment that was created or updated'
 
