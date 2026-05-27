@@ -12,12 +12,12 @@ jobs:
     timeout-minutes: 5
     steps:
     - name: Check out repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         ref: refs/pull/${{ github.event.issue.number }}/head
 
     - name: Set up node
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
         node-version: lts/*
 
@@ -31,7 +31,8 @@ jobs:
       run: PLAYWRIGHT_JSON_OUTPUT_NAME=results.json npx playwright test --config ./tests/config/playwright.config.ts
 
     - name: Create report comment
-      uses: ./.github/actions/playwright-report-summary
+      # uses: ./.github/actions/playwright-report-summary
+      uses: daun/playwright-report-summary@v4
       if: always()
       with:
         report-file: results.json

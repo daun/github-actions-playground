@@ -27,7 +27,7 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "@playwright/test": "^1.37.1",
+    "@playwright/test": "^1.60.0",
     "microbundle": "^0.15.1",
     "vitest": "^0.34.3"
   },

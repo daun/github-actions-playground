@@ -18,12 +18,12 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6
         with:
-          node-version: 18
+          node-version: 24
 
       - name: Install dependencies
         run: npm ci
@@ -32,7 +32,7 @@ jobs:
         run: npm run build
 
       - name: Upload dist folder
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: dist-folder
@@ -43,7 +43,7 @@ jobs:
     name: Run playwright tests (${{ matrix.shard }})
     runs-on: ubuntu-latest
     container:
-      image: mcr.microsoft.com/playwright:v1.38.0
+      image: mcr.microsoft.com/playwright:v1.60.0
     timeout-minutes: 20
     needs: install
     strategy:
@@ -53,12 +53,12 @@ jobs:
         # project: [chromium, firefox, webkit]
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6
         with:
-          node-version: 18
+          node-version: 24
 
       - name: Install dependencies
         run: npm ci
@@ -68,7 +68,7 @@ jobs:
         run: echo "version=$(cat ./package-lock.json | jq -re '.packages["node_modules/@playwright/test"].version')" >> $GITHUB_OUTPUT
 
       - name: Download dist folder
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v8
         with:
           name: dist-folder
           path: dist
@@ -77,7 +77,7 @@ jobs:
         run: npx playwright test --config ./tests/config/playwright.config.ts --shard ${{ matrix.shard }} # --workers 1
 
       - name: Upload blob report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: blob-reports
@@ -95,10 +95,10 @@ jobs:
       contents: write
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6
         with:
           node-version: 18
 
@@ -106,7 +106,7 @@ jobs:
         run: npm ci
 
       - name: Download blob reports
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v8
         with:
           name: blob-reports
           path: playwright-blob-reports
@@ -115,14 +115,14 @@ jobs:
         run: PLAYWRIGHT_JSON_OUTPUT_NAME=results.json npx playwright merge-reports --reporter html,json ./playwright-blob-reports
 
       - name: Upload HTML report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v7
         with:
           name: html-report # --attempt-${{ github.run_attempt }}
           path: playwright-report
           retention-days: 14
 
       - name: Check out reports branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: reports
           path: reports-branch
@@ -164,8 +164,7 @@ jobs:
 
       - name: Create report comment
         id: report-summary
-        # uses: daun/playwright-report-summary@v3
-        uses: daun/playwright-report-summary@feat/manual-dispatch
+        uses: daun/playwright-report-summary@v4
         with:
           report-file: results.json
           report-url: ${{ steps.report-id.outputs.url }}
@@ -174,8 +173,7 @@ jobs:
 
       - name: Create another report comment
         id: report-summary-2
-        # uses: daun/playwright-report-summary@v3
-        uses: daun/playwright-report-summary@feat/manual-dispatch
+        uses: daun/playwright-report-summary@v4
         with:
           report-file: results.json
           report-url: ${{ steps.report-id.outputs.url }}
