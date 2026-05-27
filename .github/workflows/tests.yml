@@ -18,12 +18,12 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Set up node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v6
         with:
-          node-version: 18
+          node-version: 24
 
       - name: Install dependencies
         run: npm ci
@@ -43,7 +43,7 @@ jobs:
     name: Run playwright tests (${{ matrix.shard }})
     runs-on: ubuntu-latest
     container:
-      image: mcr.microsoft.com/playwright:v1.38.0
+      image: mcr.microsoft.com/playwright:v1.60.0
     timeout-minutes: 20
     needs: install
     strategy:
@@ -164,8 +164,7 @@ jobs:
 
       - name: Create report comment
         id: report-summary
-        # uses: daun/playwright-report-summary@v3
-        uses: daun/playwright-report-summary@feat/manual-dispatch
+        uses: daun/playwright-report-summary@v4
         with:
           report-file: results.json
           report-url: ${{ steps.report-id.outputs.url }}
@@ -174,8 +173,7 @@ jobs:
 
       - name: Create another report comment
         id: report-summary-2
-        # uses: daun/playwright-report-summary@v3
-        uses: daun/playwright-report-summary@feat/manual-dispatch
+        uses: daun/playwright-report-summary@v4
         with:
           report-file: results.json
           report-url: ${{ steps.report-id.outputs.url }}
