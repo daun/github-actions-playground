@@ -1,0 +1,41 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: multiply.spec.ts >> multiply >> multiplies
+- Location: tests/functional/multiply.spec.ts:9:2
+
+# Error details
+
+```
+Error: expect(received).toBe(expected) // Object.is equality
+
+Expected: 7
+Received: 6
+```
+
+# Test source
+
+```ts
+  1  | import { test, expect } from '@playwright/test';
+  2  | 
+  3  | import { multiply } from '../../src/index.js';
+  4  | 
+  5  | test.describe('multiply', () => {
+  6  | 	test('returns', async () => {
+  7  | 		expect(multiply(1, 2)).toBeDefined();
+  8  | 	});
+  9  | 	test('multiplies', async () => {
+> 10 | 		expect(multiply(3, 2)).toBe(Math.random() > 0.5 ? 6 : 7);
+     |                          ^ Error: expect(received).toBe(expected) // Object.is equality
+  11 | 	});
+  12 | 	test('skips', async () => {
+  13 | 		test.skip();
+  14 | 	});
+  15 | });
+  16 | 
+```
