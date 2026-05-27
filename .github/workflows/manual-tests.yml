@@ -31,7 +31,8 @@ jobs:
       run: PLAYWRIGHT_JSON_OUTPUT_NAME=results.json npx playwright test --config ./tests/config/playwright.config.ts
 
     - name: Create report comment
-      uses: ./.github/actions/playwright-report-summary
+      # uses: ./.github/actions/playwright-report-summary
+      uses: daun/playwright-report-summary@v4
       if: always()
       with:
         report-file: results.json
